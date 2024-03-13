@@ -53,6 +53,16 @@ For a BLTouch, the control signal (deploy/stow) typically comes through a PWM (P
 
 When the probe touches the bed, the BLTouch signals this by pulling up the Z-min pin (or whichever pin it's connected to for touch detection) to HIGH for a brief moment.
 
+## Adapting the Code for Firmware Compatibility
+
+Given the nuances in how firmware controls a BLTouch, we can adapt the Arduino code to interpret PWM signals for deploy and stow commands based on pulse width. This requires using an interrupt to measure the length of the incoming pulse on the control pin accurately. However, accurately decoding PWM signals on an Arduino to match specific pulse lengths can be complex and might require precise timing that interrupts can offer.
+
+Since implementing a full PWM decoder might be overly complex, we've focused on a conceptual outline that adapts the previous approach to be more aligned with how firmware might interface with a BLTouch:
+
+    - Use an interrupt to measure pulse width on the control pin. This involves setting up an interrupt service routine (ISR) to detect rising and falling edges and measure the time between them to determine the pulse width.
+    - Interpret the pulse width to determine if it's a deploy or stow command (or other commands) based on predefined thresholds that match the firmware's signaling method.
+    - Act accordingly, either by starting/stopping the monitoring of the load cell or by performing other required actions like a self-test or clearing alarms, mimicking the BLTouch behavior.
+
 ## Contributing
 
 Contributions to this project are welcome. Here are some ways you can contribute:
