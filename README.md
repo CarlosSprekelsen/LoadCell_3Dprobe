@@ -39,6 +39,20 @@ Maintaining compatibility with the BLTouch protocol means we shall handle signal
 
 Once installed, the system automatically calibrates at the start of each print or when the deploy command is sent from the printer's firmware. The load cell detects the slightest touch of the nozzle on the bed, signaling the printer to adjust according to the detected bed level.
 
+## BL Touch interface
+For a BLTouch, the control signal (deploy/stow) typically comes through a PWM (Pulse Width Modulation) signal, where different pulse widths correspond to different commands:
+
+    Deploy Command: A short pulse (e.g., 10ms) to deploy the probe.
+    Stow Command: A longer pulse (e.g., 90ms) to retract the probe.
+    Test/Alarm Release: Other specific pulse widths might be used for self-test or to clear alarms.
+For a BLTouch, the control signal (deploy/stow) typically comes through a PWM (Pulse Width Modulation) signal, where different pulse widths correspond to different commands:
+
+   - Deploy Command: A short pulse (10ms) to deploy the probe.
+   - Stow Command: A longer pulse (90ms) to retract the probe.
+   - Test/Alarm Release: Other specific pulse widths might be used for self-test or to clear alarms.
+
+When the probe touches the bed, the BLTouch signals this by pulling up the Z-min pin (or whichever pin it's connected to for touch detection) to HIGH for a brief moment.
+
 ## Contributing
 
 Contributions to this project are welcome. Here are some ways you can contribute:
