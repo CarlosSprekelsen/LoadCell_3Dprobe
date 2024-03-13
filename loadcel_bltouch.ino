@@ -4,39 +4,52 @@
 const int LOADCELL_DOUT_PIN = 3;
 const int LOADCELL_SCK_PIN = 2;
 
-// INPUT_PIN: specific pin number that you're using to receive the control signal
+// Arduino circuit wiring
+// CONTROL_PIN: specific pin number that you're using to receive the control signal
 // from the 3D printer controller. This pin will be used to detect when the 3D printer
 // sends a signal to deploy or stow the BL-Touch probe, triggering the load cell to
 // reset its baseline (tare) or start measuring for touch detection.
-const int INPUT_PIN = 4; // Example pin for receiving control signals
-
 // OUTPUT_PIN: digital pin configured as an output to send a signal to the printer's
 // controller when the load cell detects a touch (i.e., when the nozzle comes into contact
 // with the bed). This mimics the BLTouch's behavior of signaling bed contact
+const int CONTROL_PIN = 4; // Example pin for receiving control signals
 const int OUTPUT_PIN = 5; // Example pin for signaling touch detection to the printer
 
 HX711 scale;
+bool isDeployed = false; // Track the deploy state
 
 void setup() {
   Serial.begin(9600);
   scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
   scale.tare(); // Resets to 0 with no weight on it at startup
   
-  pinMode(INPUT_PIN, INPUT); // Set the control signal pin as input
+  pinMode(CONTROL_PIN, INPUT_PULLUP); // Use internal pull-up resistor
   pinMode(OUTPUT_PIN, OUTPUT); // Set the touch detection signal pin as output
 }
 
 void loop() {
-  // Check for control signal to deploy/stow probe
-  if(digitalRead(INPUT_PIN) == HIGH) { // Assuming HIGH signal for deploy
-    scale.tare(); // Reset scale to 0 to recalibrate for current position
+  // Check the control pin for deploy/retract command
+  bool currentDeployState = digitalRead(CONTROL_PIN) == LOW; // Assuming LOW signal for deploy, HIGH for retract
+  if (currentDeployState != isDeployed) {
+    // State has changed
+    isDeployed = currentDeployState; // Update deploy state
+    
+      if (isDeployed) {
+      // Deploy command received
+      scale.tare(); // Calibrate for current position
+    } else {
+      // Retract command received
+      // Optional: Implement any needed actions for retract
+    }
   }
 
+if (isDeployed) {
+  // Only read and check for touch if in deployed state
   // Read and filter the scale value to detect touch sensitivity and 
   // manage potential bed crashes. 
   float reading = getFilteredReading();
 
-  // Assuming a threshold for touch detection; adjust based on the setup's sensitivity
+  // Threshold for touch detection; adjust based on the setup's sensitivity
   float touchThreshold = -0.05; // This is an example threshold. To determine the correct value through testing.
 
 
@@ -53,8 +66,8 @@ void loop() {
   // For debugging: output the reading to the serial monitor
   Serial.print("Filtered Reading: ");
   Serial.println(reading);
-
-  delay(100); // Adjust based on tests for responsiveness vs. performance
+  }
+  delay(100); // Adjust delay for balance between responsiveness and minimizing unnecessary processing
 }
 
 float getFilteredReading() {
