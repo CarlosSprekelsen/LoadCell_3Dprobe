@@ -29,9 +29,10 @@ This project aims to implement an auto-leveling system for 3D printers using a l
 ### Software Installation
 
 1. Install the Arduino IDE on your computer.
-2. Clone this repository and open the project in the Arduino IDE.
-3. Adjust the pin definitions in the code to match your wiring.
-4. Upload the sketch to your Arduino Nano.
+2. Search for “HX711 Arduino Library” and install the library by Bogdan Necula
+3. Clone this repository and open the project in the Arduino IDE.
+4. Adjust the pin definitions in the code to match your wiring.
+5. Upload the sketch to your Arduino Nano.
 
 ## Usage
 
