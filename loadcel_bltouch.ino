@@ -1,22 +1,34 @@
 #include "HX711.h"
 
+// BL Touch pulse durations
+// For Deploy Command: A short pulse (e.g., 10ms) to deploy the probe.
+const int DEPLOY_PULSE_MIN = 30
+const int DEPLOY_PULSE_MAX = 60
+// For Stow Command: A longer pulse (e.g., 90ms) to retract the probe.
+const int STOW_PULSE_MIN = 80
+const int STOW_PULSE_MAX = 100
+
 // HX711 circuit wiring
 const int LOADCELL_DOUT_PIN = 3;
 const int LOADCELL_SCK_PIN = 2;
 
-// Arduino circuit wiring
 // CONTROL_PIN: specific pin number that you're using to receive the control signal
 // from the 3D printer controller. This pin will be used to detect when the 3D printer
 // sends a signal to deploy or stow the BL-Touch probe, triggering the load cell to
 // reset its baseline (tare) or start measuring for touch detection.
+const int CONTROL_PIN = 4; // Example pin for receiving control signals
+
 // OUTPUT_PIN: digital pin configured as an output to send a signal to the printer's
 // controller when the load cell detects a touch (i.e., when the nozzle comes into contact
 // with the bed). This mimics the BLTouch's behavior of signaling bed contact
-const int CONTROL_PIN = 4; // Example pin for receiving control signals
 const int OUTPUT_PIN = 5; // Example pin for signaling touch detection to the printer
 
 HX711 scale;
 bool isDeployed = false; // Track the deploy state
+
+volatile unsigned long pulseStart = 0;
+volatile unsigned long pulseWidth = 0;
+
 
 void setup() {
   Serial.begin(9600);
@@ -25,24 +37,29 @@ void setup() {
   
   pinMode(CONTROL_PIN, INPUT_PULLUP); // Use internal pull-up resistor
   pinMode(OUTPUT_PIN, OUTPUT); // Set the touch detection signal pin as output
+  
+  attachInterrupt(digitalPinToInterrupt(CONTROL_PIN), pulseInterrupt, CHANGE);
 }
 
 void loop() {
-  // Check the control pin for deploy/retract command
-  bool currentDeployState = digitalRead(CONTROL_PIN) == LOW; // Assuming LOW signal for deploy, HIGH for retract
-  if (currentDeployState != isDeployed) {
-    // State has changed
-    isDeployed = currentDeployState; // Update deploy state
-    
-      if (isDeployed) {
-      // Deploy command received
+  // Check the pulse width to determine the command
+  if (pulseWidth > 0) {
+    if (pulseWidth >= DEPLOY_PULSE_MIN && pulseWidth <= DEPLOY_PULSE_MAX) {
+      // Handle deploy command
+      // Reset scale, start monitoring, etc.
       scale.tare(); // Calibrate for current position
-    } else {
-      // Retract command received
-      // Optional: Implement any needed actions for retract
+      isDeployed = true;
+    } else if (pulseWidth >= STOW_PULSE_MIN && pulseWidth <= STOW_PULSE_MAX) {
+      // Handle stow command
+      // Stop monitoring, etc.
+      isDeployed = false;
     }
+    // Reset pulseWidth for the next command
+    pulseWidth = 0;
+    
   }
 
+  // Continue with touch detection logic if monitoring
 if (isDeployed) {
   // Only read and check for touch if in deployed state
   // Read and filter the scale value to detect touch sensitivity and 
@@ -54,7 +71,7 @@ if (isDeployed) {
 
 
   // Detect touch - if reading goes below threshold, it indicates a touch
-  if (touchThreshold < 0) {
+  if (reading < touchThreshold) {
     // Touch detected, send signal
     // This part depends on how you wish to signal the main controller,
     // For example, by setting a pin HIGH briefly
@@ -68,6 +85,19 @@ if (isDeployed) {
   Serial.println(reading);
   }
   delay(100); // Adjust delay for balance between responsiveness and minimizing unnecessary processing
+}
+}
+
+// Interrupt service routine to measure the pulse width
+void pulseInterrupt() {
+  if (digitalRead(CONTROL_PIN) == HIGH) {
+    pulseStart = micros(); // Record time when pulse goes HIGH
+  } else {
+    if (pulseStart > 0) {
+      pulseWidth = micros() - pulseStart; // Calculate pulse width
+      pulseStart = 0; // Reset start time
+    }
+  }
 }
 
 float getFilteredReading() {
