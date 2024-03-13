@@ -1,6 +1,7 @@
 # 3D Printer Auto-Leveling with Load Cell
 
 This project aims to implement an auto-leveling system for 3D printers using a load cell, replacing traditional methods such as the BLTouch. This shall ease offset calibrations. The system utilizes an Arduino Nano to interpret load cell readings, offering a cost-effective and highly sensitive solution for auto-leveling. By detecting minute changes in pressure when the printer's nozzle touches the bed, the system can accurately level the bed in real-time, enhancing print quality and reliability for the first layer.
+Maintaining compatibility with the BLTouch protocol means we shall handle signals in a way that aligns with how a BLTouch operates, typically using a single control signal for deploy/stow commands and another for signaling the touch detection back to the printer.
 
 ## Features
 
